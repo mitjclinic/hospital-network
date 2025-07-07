@@ -1,0 +1,702 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>MIT Jameel Clinic AI Hospital Network</title>
+
+  <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;800&display=swap" rel="stylesheet">
+
+  <style>
+    :root {
+      --mit-red: #000000;
+      --teal: #007e8a;
+      --bg-light: #f0faff;
+      --text: #111;
+      --mirai-color: #695CAB;
+      --sybil-color: #9CBAE8;
+    }
+
+    html, body {
+      margin: 0;
+      padding: 0;
+      font-family: 'Inter', sans-serif;
+      background: linear-gradient(to bottom right, #f4faff, #ffffff);
+      color: var(--text);
+    }
+
+    header {
+      position: fixed;
+      top: 0;
+      width: 100%;
+      background: rgba(255, 255, 255, 0.95);
+      padding: 1.2rem 1rem;
+      box-shadow: 0 2px 10px rgba(0,0,0,0.06);
+      z-index: 1000;
+      transition: top 0.3s;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+    }
+
+    .header-logo {
+      position: absolute;
+      left: 1rem;
+      height: 40px;
+      width: auto;
+    }
+
+    header h1 {
+      margin: 0;
+      font-size: 1.6rem;
+      text-align: center;
+      font-weight: 800;
+      color: var(--mit-red);
+      flex: 1;
+    }
+
+    .title-container {
+      text-align: center;
+      padding-top: 4rem;
+      margin-bottom: 1rem;
+    }
+
+    .title-container h1 {
+      margin: 0;
+      font-size: 2rem;
+      font-weight: 800;
+      color: var(--mit-red);
+    }
+
+    .title-container p {
+      font-size: 1rem;
+      color: #444;
+    }
+
+    .controls {
+      display: flex;
+      justify-content: center;
+      gap: 1rem;
+      margin-bottom: 1rem;
+      padding: 0 1rem;
+    }
+
+    .toggle-btn {
+      background: #fff;
+      border: 2px solid #ddd;
+      padding: 0.8rem 1.5rem;
+      border-radius: 25px;
+      cursor: pointer;
+      font-weight: 600;
+      font-size: 0.9rem;
+      transition: all 0.3s ease;
+      box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+    }
+
+    .toggle-btn:hover {
+      transform: translateY(-2px);
+      box-shadow: 0 4px 12px rgba(0,0,0,0.15);
+    }
+
+    .toggle-btn.active {
+      color: white;
+      border-color: transparent;
+    }
+
+    .toggle-btn.mirai.active {
+      background: var(--mirai-color);
+    }
+
+    .toggle-btn.sybil.active {
+      background: var(--sybil-color);
+    }
+
+    .map-wrapper {
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      padding: 1rem 1rem 1rem 1rem;
+    }
+
+    #map {
+      width: 90vw;
+      height: 75vh;
+      border-radius: 20px;
+      box-shadow: 0 8px 25px rgba(0, 0, 0, 0.12);
+      overflow: hidden;
+    }
+
+    .legend {
+      background: #ffffffdd;
+      padding: 12px 16px;
+      font-size: 14px;
+      border-radius: 8px;
+      box-shadow: 0 2px 5px rgba(0,0,0,0.15);
+      font-weight: 500;
+    }
+
+    .legend div {
+      margin-bottom: 6px;
+    }
+
+    .legend span {
+      display: inline-block;
+      width: 14px;
+      height: 14px;
+      margin-right: 8px;
+      vertical-align: middle;
+      border-radius: 50%;
+    }
+
+    .footer-text {
+      text-align: center;
+      font-size: 14px;
+      color: #444;
+      margin-top: 0.2rem;
+      margin-bottom: 2rem;
+      padding: 0 2rem;
+      line-height: 1.6;
+    }
+
+    @media (max-width: 768px) {
+      .header-logo {
+        height: 30px;
+        left: 0.5rem;
+      }
+      
+      header h1 {
+        font-size: 1rem;
+      }
+      
+      .title-container {
+        padding-top: 5rem;
+      }
+      
+      .title-container h1 {
+        font-size: 1.5rem;
+      }
+      .title-container p {
+        font-size: 0.9rem;
+      }
+      
+      .controls {
+        flex-direction: column;
+        align-items: center;
+        gap: 0.5rem;
+      }
+      
+      .toggle-btn {
+        width: 200px;
+        padding: 0.7rem 1rem;
+      }
+      
+      #map {
+        width: 100%;
+        height: 70vh;
+      }
+    }
+  </style>
+</head>
+<body>
+<header id="pageHeader">
+  <img src="jclinic.jpg" alt="MIT Jameel Clinic Logo" class="header-logo">
+  <h1>MIT Jameel Clinic AI Hospital Network</h1>
+</header>
+<div class="title-container">
+  <p>Maintained by MIT Jameel Clinic. Pinch to zoom.</p>
+</div>
+
+<div class="controls">
+  <button class="toggle-btn mirai active" id="miraiBtn">Mirai Hospitals</button>
+  <button class="toggle-btn sybil" id="sybilBtn">Sybil Hospitals</button>
+</div>
+
+<div class="map-wrapper">
+  <div id="map"></div>
+</div>
+
+<div class="footer-text">
+  <p>Questions? Email <a href="mailto:jclinic-info@mit.edu">jclinic-info@mit.edu</a>. If you are a hospital, clinic, or cancer center interested in joining our hospital network, please fill in our form.</p>
+</div>
+
+<script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+<script>
+  const data = [
+    {
+      "city": "Saint Cyril Cancer Treatment Foundation (NGO)",
+      "lat": 6.5244,
+      "lon": 3.3792,
+      "tool": "Mirai"
+    },
+    {
+      "city": "Centre de Radiologie Ibn Zohr",
+      "lat": 36.8065,
+      "lon": 10.1815,
+      "tool": "Mirai"
+    },
+    {
+      "city": "Shefaa Al Orman",
+      "lat": 30.0444,
+      "lon": 31.2357,
+      "tool": "Mirai"
+    },
+    {
+      "city": "Chiang Mai University",
+      "lat": 18.7883,
+      "lon": 98.9853,
+      "tool": "Mirai"
+    },
+    {
+      "city": "Saigon MEC",
+      "lat": 10.8231,
+      "lon": 106.6297,
+      "tool": "Mirai"
+    },
+    {
+      "city": "Chung Shan Medical University",
+      "lat": 24.1477,
+      "lon": 120.6736,
+      "tool": "Sybil"
+    },
+    {
+      "city": "KG Hospital (South India)",
+      "lat": 11.0168,
+      "lon": 76.9558,
+      "tool": "Mirai"
+    },
+    {
+      "city": "Delhi Medical School (North India)",
+      "lat": 28.7041,
+      "lon": 77.1025,
+      "tool": "Mirai"
+    },
+    {
+      "city": "Apollo Hospital (North India)",
+      "lat": 28.7041,
+      "lon": 77.1025,
+      "tool": "Mirai"
+    },
+    {
+      "city": "CGMH - Chang Gung Memorial Hospital",
+      "lat": 25.0330,
+      "lon": 121.5654,
+      "tool": "Mirai_Sybil"
+    },
+    {
+      "city": "China Medical University Hospital",
+      "lat": 24.1477,
+      "lon": 120.6736,
+      "tool": "Sybil"
+    },
+    {
+      "city": "Singapore General Hospital (SingHealth)",
+      "lat": 1.3521,
+      "lon": 103.8198,
+      "tool": "Sybil"
+    },
+    {
+      "city": "Seoul National University Hospital",
+      "lat": 37.5665,
+      "lon": 126.9780,
+      "tool": "Sybil"
+    },
+    {
+      "city": "Agios Savvas Hospital (National Healthcare Service, ESY)",
+      "lat": 37.9838,
+      "lon": 23.7275,
+      "tool": "Mirai"
+    },
+    {
+      "city": "Catalan Institute of Health",
+      "lat": 41.3851,
+      "lon": 2.1734,
+      "tool": "Mirai"
+    },
+    {
+      "city": "European Institute of Oncology",
+      "lat": 45.4642,
+      "lon": 9.1900,
+      "tool": "Mirai"
+    },
+    {
+      "city": "Istituto Romagnolo per lo Studio dei Tumori (IRST)",
+      "lat": 44.0678,
+      "lon": 12.5736,
+      "tool": "Sybil"
+    },
+    {
+      "city": "Karolinska Institute",
+      "lat": 59.3293,
+      "lon": 18.0686,
+      "tool": "Mirai"
+    },
+    {
+      "city": "University Hospital Zagreb (Croatian Health Insurance Fund, HZZO)",
+      "lat": 45.8150,
+      "lon": 15.9819,
+      "tool": "Sybil"
+    },
+    {
+      "city": "Hannover Medical School",
+      "lat": 52.3759,
+      "lon": 9.7320,
+      "tool": "Sybil"
+    },
+    {
+      "city": "Cambridge University",
+      "lat": 52.2053,
+      "lon": 0.1218,
+      "tool": "Mirai"
+    },
+    {
+      "city": "University of Norwich",
+      "lat": 52.6309,
+      "lon": 1.2974,
+      "tool": "Mirai"
+    },
+    {
+      "city": "Queen Mary University of London",
+      "lat": 51.5074,
+      "lon": -0.1278,
+      "tool": "Mirai"
+    },
+    {
+      "city": "Centre Hospitalier Princesse Grace",
+      "lat": 43.7384,
+      "lon": 7.4246,
+      "tool": "Mirai"
+    },
+    {
+      "city": "SENAI CIMATEC University Center",
+      "lat": -12.9714,
+      "lon": -38.5014,
+      "tool": "Sybil"
+    },
+    {
+      "city": "Santa Marcelina",
+      "lat": -23.5505,
+      "lon": -46.6333,
+      "tool": "Mirai"
+    },
+    {
+      "city": "Hospital de Amor (Barretos)",
+      "lat": -20.5568,
+      "lon": -48.5682,
+      "tool": "Sybil"
+    },
+    {
+      "city": "Santa Casa",
+      "lat": -23.5505,
+      "lon": -46.6333,
+      "tool": "Mirai"
+    },
+    {
+      "city": "University of Chile Digital Hospital",
+      "lat": -33.4489,
+      "lon": -70.6693,
+      "tool": "Mirai_Sybil"
+    },
+    {
+      "city": "Fundacion Valle del Lili",
+      "lat": 3.4516,
+      "lon": -76.5320,
+      "tool": "Mirai"
+    },
+    {
+      "city": "Grupo Angeles",
+      "lat": 19.4326,
+      "lon": -99.1332,
+      "tool": "Mirai"
+    },
+    {
+      "city": "Tec Salud",
+      "lat": 25.6866,
+      "lon": -100.3161,
+      "tool": "Mirai"
+    },
+    {
+      "city": "King Faisal SHRC",
+      "lat": 24.7136,
+      "lon": 46.6753,
+      "tool": "Mirai"
+    },
+    {
+      "city": "SEHA Virtual Hospital",
+      "lat": 24.7136,
+      "lon": 46.6753,
+      "tool": "Mirai"
+    },
+    {
+      "city": "Saudi German Hospital",
+      "lat": 24.7136,
+      "lon": 46.6753,
+      "tool": "Mirai"
+    },
+    {
+      "city": "King Hussein Cancer Center",
+      "lat": 31.9454,
+      "lon": 35.9284,
+      "tool": "Mirai"
+    },
+    {
+      "city": "Henry Ford Hospital (MI)",
+      "lat": 42.3314,
+      "lon": -83.0458,
+      "tool": "Mirai"
+    },
+    {
+      "city": "Memorial Sloan Kettering Cancer Center (NY)",
+      "lat": 40.7128,
+      "lon": -74.0060,
+      "tool": "Mirai"
+    },
+    {
+      "city": "New York Hospitals (NY)",
+      "lat": 40.7128,
+      "lon": -74.0060,
+      "tool": "Mirai"
+    },
+    {
+      "city": "Emory University Hospital (GA)",
+      "lat": 33.7490,
+      "lon": -84.3880,
+      "tool": "Mirai"
+    },
+    {
+      "city": "Inova Health System (VA)",
+      "lat": 38.9072,
+      "lon": -77.0369,
+      "tool": "Mirai"
+    },
+    {
+      "city": "Dana Farber Cancer Institute (MA)",
+      "lat": 42.3601,
+      "lon": -71.0589,
+      "tool": "Mirai"
+    },
+    {
+      "city": "Mount Auburn Hospital (MA)",
+      "lat": 42.3601,
+      "lon": -71.0589,
+      "tool": "Mirai"
+    },
+    {
+      "city": "Massachusetts General Hospital (MA)",
+      "lat": 42.3601,
+      "lon": -71.0589,
+      "tool": "Mirai_Sybil"
+    },
+    {
+      "city": "UMass Chan Medical School (MA)",
+      "lat": 42.2626,
+      "lon": -71.8023,
+      "tool": "Mirai"
+    },
+    {
+      "city": "UC Davis (CA)",
+      "lat": 38.5816,
+      "lon": -121.4944,
+      "tool": "Sybil"
+    },
+    {
+      "city": "Martin Luther King Community Hospital (CA)",
+      "lat": 34.0522,
+      "lon": -118.2437,
+      "tool": "Mirai"
+    },
+    {
+      "city": "UCLA (CA)",
+      "lat": 34.0522,
+      "lon": -118.2437,
+      "tool": "Mirai"
+    },
+    {
+      "city": "Kaiser Permanente Northern California (CA)",
+      "lat": 37.7749,
+      "lon": -122.4194,
+      "tool": "Mirai"
+    },
+    {
+      "city": "Medical University of South Carolina (SC)",
+      "lat": 32.7767,
+      "lon": -79.9311,
+      "tool": "Mirai_Sybil"
+    },
+    {
+      "city": "Brigham and Women's (MA)",
+      "lat": 42.3601,
+      "lon": -71.0589,
+      "tool": "Mirai"
+    },
+    {
+      "city": "Wellstar Health System (GA)",
+      "lat": 33.7490,
+      "lon": -84.3880,
+      "tool": "Sybil"
+    },
+    {
+      "city": "University of Illinois Hospital & Health Sciences System (IL)",
+      "lat": 41.8781,
+      "lon": -87.6298,
+      "tool": "Sybil"
+    },
+    {
+      "city": "University of Chicago (IL)",
+      "lat": 41.8781,
+      "lon": -87.6298,
+      "tool": "Mirai"
+    },
+    {
+      "city": "Baptist Memorial Hospital (TN)",
+      "lat": 36.1627,
+      "lon": -86.7816,
+      "tool": "Sybil"
+    },
+    {
+      "city": "Dayton VA Medical Center (OH)",
+      "lat": 39.7589,
+      "lon": -84.1916,
+      "tool": "Sybil"
+    },
+    {
+      "city": "University of Ottawa",
+      "lat": 45.4215,
+      "lon": -75.6972,
+      "tool": "Mirai"
+    },
+    {
+      "city": "British Columbia Cancer Research Centre",
+      "lat": 49.2827,
+      "lon": -123.1207,
+      "tool": "Sybil"
+    }
+  ];
+
+  // Initialize map
+  const map = L.map('map', {
+    scrollWheelZoom: true
+  }).setView([20, 0], 2.3);
+
+  L.tileLayer('https://{s}.basemaps.cartocdn.com/rastertiles/voyager/{z}/{x}/{y}{r}.png', {
+    attribution: '&copy; <a href="https://carto.com/">CARTO</a> & OpenStreetMap contributors',
+    subdomains: 'abcd',
+    maxZoom: 8
+  }).addTo(map);
+
+  // Colors for tools
+  const toolColors = {
+    Mirai: "#695CAB",
+    Sybil: "#9CBAE8"
+  };
+
+  // Store all markers
+  let allMarkers = [];
+  let currentView = 'Mirai';
+
+  // Create markers for each hospital
+  function createMarkers() {
+    // Clear existing markers
+    allMarkers.forEach(marker => map.removeLayer(marker));
+    allMarkers = [];
+
+    data.forEach(item => {
+      // For hospitals with both tools, create separate entries
+      const tools = item.tool === 'Mirai_Sybil' ? ['Mirai', 'Sybil'] : [item.tool];
+      
+      tools.forEach(tool => {
+        const marker = L.circleMarker([item.lat, item.lon], {
+          radius: 6,
+          fillColor: toolColors[tool],
+          color: "#333",
+          weight: 1,
+          opacity: 1,
+          fillOpacity: 0.85
+        });
+
+        marker.tool = tool;
+        marker.hospitalName = item.city;
+
+        const popup = L.popup({ autoClose: false, closeOnClick: false })
+          .setContent(`<strong style='font-size: 14px'>${item.city}</strong><br> <div style="font-size: 12px"> Tool: <strong>${tool}</strong></div>`);
+
+        marker.on('mouseover', function(e) {
+          popup.setLatLng(e.latlng).openOn(map);
+        });
+
+        marker.on('mouseout', function() {
+          map.closePopup(popup);
+        });
+
+        allMarkers.push(marker);
+      });
+    });
+
+    updateView();
+  }
+
+  function updateView() {
+    allMarkers.forEach(marker => {
+      if (marker.tool === currentView) {
+        map.addLayer(marker);
+      } else {
+        map.removeLayer(marker);
+      }
+    });
+  }
+
+  const miraiBtn = document.getElementById('miraiBtn');
+  const sybilBtn = document.getElementById('sybilBtn');
+
+  miraiBtn.addEventListener('click', () => {
+    currentView = 'Mirai';
+    miraiBtn.classList.add('active');
+    sybilBtn.classList.remove('active');
+    updateView();
+  });
+
+  sybilBtn.addEventListener('click', () => {
+    currentView = 'Sybil';
+    sybilBtn.classList.add('active');
+    miraiBtn.classList.remove('active');
+    updateView();
+  });
+
+  const legend = L.control({ position: "bottomright" });
+  legend.onAdd = function() {
+    const div = L.DomUtil.create("div", "legend");
+    if (currentView === 'Mirai') {
+      div.innerHTML = `<div><span style='background: ${toolColors.Mirai}'></span> Mirai</div>`;
+    } else {
+      div.innerHTML = `<div><span style='background: ${toolColors.Sybil}'></span> Sybil</div>`;
+    }
+    return div;
+  };
+  legend.addTo(map);
+
+  function updateLegend() {
+    map.removeControl(legend);
+    legend.addTo(map);
+  }
+
+  miraiBtn.addEventListener('click', updateLegend);
+  sybilBtn.addEventListener('click', updateLegend);
+
+  createMarkers();
+
+  let lastScrollTop = 0;
+  const header = document.getElementById("pageHeader");
+  if (header) {
+    window.addEventListener("scroll", function() {
+      const scrollTop = window.pageYOffset || document.documentElement.scrollTop;
+      if (scrollTop > lastScrollTop) {
+        header.style.top = "-80px";
+      } else {
+        header.style.top = "0";
+      }
+      lastScrollTop = scrollTop;
+    });
+  }
+</script>
+</body>
+</html>
